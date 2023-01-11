@@ -1,10 +1,11 @@
 // app.js作为整个项目的入口文件，应该最先被建立
-
 // 导入 express 模块
 const express = require('express')
 // 创建 express 的服务器实例
 const app = express()
-// 导入cors中间件配置跨域问题
+// body-parser：控制、解析传输的json以及urlencoded格式的数据
+const bodyParser = require('body-parser')
+// cors：配置跨域问题
 const cors = require('cors')
 // joi：表单验证模块
 const joi = require('joi')
@@ -12,18 +13,29 @@ const joi = require('joi')
 const expressJWT = require('express-jwt')
 // config：用户自己定义的token加密秘钥
 const config = require('./config')
+// path：配置文件路径的模块
+const path = require('path')
 // 导入路由模块
 const userRouter = require('./router/user')
 const articleRouter = require('./router/article')
+const uploadRouter = require('./router/upload')
 
 app.use(cors())
 
 // 除了/api/开头的接口不需要鉴权，其他的接口都需要鉴权
-app.use(expressJWT({ secret: config.secretKey }).unless({ path: [/^\/user\//, /^\/api\//] }))
+app.use(expressJWT({ secret: config.secretKey }).unless({ path: [/^\/user\//, /^\/api\//, /^\/images\//] }))
 
 // 配置解析表单数据的中间件
-// 通过express.json()这个中间件，解析表单中的JSON格式的数据
-app.use(express.json())
+// 通过bodyParser这个中间件，解析表单中的JSON格式以及urlencoded的数据
+app.use(bodyParser.json({
+    //最大一次性上传大小不超过10000kb
+    limit: '10000kb'
+}));
+app.use(bodyParser.urlencoded({
+    limit: '10000kb',
+    extended: true,
+    parameterLimit: 50000,//这个得加，不加没效果
+}));
 
 // 响应数据的中间件(重复写很麻烦，所以直接封装一个)
 app.use((req, res, next) => {
@@ -36,15 +48,12 @@ app.use((req, res, next) => {
     }
     next()
 })
+app.use('/images', express.static(path.join(__dirname, './static')))
 
-// 路由模块要在最后才注册！
-app.use('/user', userRouter)
-app.use('/article', articleRouter)
-app.get('/info/getinfo', (req, res) => {
-    res.send({
-        result_code: 0, result_msg: 'get user info succeed', userinfoid: req.user.id, userinfoname: req.user.account
-    })
-})
+// 注册路由模块
+app.use('/user', userRouter) // 用户模块
+app.use('/article', articleRouter) // 文章模块
+app.use(uploadRouter) // 图片上传模块
 
 // 全局错误中间件
 app.use((err, req, res, next) => {
@@ -63,7 +72,6 @@ app.use((err, req, res, next) => {
     res.cc(err)
 })
 
-// 调用 app.listen 方法，指定端口号并启动web服务器
 app.listen(4000, function () {
-    console.log('api server running at http://192.168.234.188:4000')
+    console.log('api server running at http://127.0.0.1:4000')
 })

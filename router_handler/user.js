@@ -64,17 +64,17 @@ exports.login = (req, res) => {
   const userinfo = req.query
   // 在数据库中查询用户所提交的账号
   const sql_Login = 'select * from users where account=?'
-  db.query(sql_Login, userinfo.account, (err, results) => {
+  db.query(sql_Login, userinfo.account, (err, userinfo_results) => {
     if (err) return res.send({
       result_code: 1,
       result_msg: err
     })
-    if (results.length !== 1) return res.send({
+    if (userinfo_results.length !== 1) return res.send({
       result_code: 1,
       result_msg: 'login failed',
-      result_length: results.length
+      result_length: userinfo_results.length
     })
-    const compareResult = bcryptjs.compareSync(userinfo.password, results[0].password)
+    const compareResult = bcryptjs.compareSync(userinfo.password, userinfo_results[0].password)
     if (!compareResult) {
       return res.send({
         result_code: 1,
@@ -83,8 +83,9 @@ exports.login = (req, res) => {
     } else {
       // 如果输入正确，则生成 JWT token 字符串返回给客户端
       // 先剔除除了id和account以外的任何值
-      const user = { ...results[0], password: '', name: '', major: '', university: '', headphoto: '', backgroundphoto: '', signature: '', introduce: '' }
+      const user = { ...userinfo_results[0], password: '', name: '', major: '', university: '', headphoto: '', backgroundphoto: '', signature: '', introduce: '' }
       const token = jwt.sign(user, config.secretKey, { expiresIn: '24h' })
+      // 获取该用户的keywords
       const sql_GetKeywords = 'select keywords_name,keywords_count from keywords where user_id=?'
       db.query(sql_GetKeywords, user.id, (err, keyword_results) => {
         if (err) {
@@ -93,6 +94,7 @@ exports.login = (req, res) => {
             result_msg: "get keywords failed:" + err.message
           })
         } else {
+          // 获取全局的article_labels
           const sql_GetArticleLabels = 'select label_name as label from article_labels'
           db.query(sql_GetArticleLabels, (err, label_results) => {
             if (err) {
@@ -109,12 +111,63 @@ exports.login = (req, res) => {
                 result_msg: "login succeed",
                 token: 'Bearer ' + token,
                 keywords_list: keyword_results,
-                user_info: { ...results[0], password: null },
+                user_info: { ...userinfo_results[0], password: null },
                 article_labels: label_results
               })
             }
           })
         }
+      })
+    }
+  })
+}
+
+// 根据user_id获取某个具体登录用户的信息
+exports.getUserInfo = (req, res) => {
+  const user_id = req.query.user_id
+  const sql_SelectUserInfo = 'select * from users where id=?'
+  db.query(sql_SelectUserInfo, user_id, (err, results) => {
+    if (err) {
+      return res.send({
+        result_code: 1,
+        result_msg: "get userinfo failed:" + err.message
+      })
+    } else if (results.length != 1) {
+      return res.send({
+        result_code: 1,
+        result_msg: "get userinfo failed:results.length != 1   " + results.length
+      })
+    } else {
+      let { password, ...user_info } = results[0]
+      return res.send({
+        result_code: 0,
+        result_msg: "get userinfo succeed",
+        user_info: user_info
+      })
+    }
+  })
+}
+
+// 提交更新表单，更新某一用户的用户信息
+exports.editUserInfo = (req, res) => {
+  const { id, ...newUserInfo } = req.body
+  newUserInfo.major = newUserInfo.major.join(',')
+  const sql_EditUserInfo = 'update users set name=?,major=?,university=?,headphoto=?,backgroundphoto=?,signature=?,introduce=? where id=?'
+  db.query(sql_EditUserInfo, [newUserInfo.name, newUserInfo.major, newUserInfo.university, newUserInfo.headphoto, newUserInfo.backgroundphoto, newUserInfo.signature, newUserInfo.introduce, id], (err, results) => {
+    if (err) {
+      return res.send({
+        result_code: 1,
+        result_msg: "update user's info failed!：" + err.message
+      })
+    } else if (results.affectedRows !== 1) {
+      return res.send({
+        result_code: 1,
+        result_msg: "results.affectedRows=" + results.affectedRows
+      })
+    } else {
+      return res.send({
+        result_code: 0,
+        result_msg: "update user's info succeed"
       })
     }
   })
