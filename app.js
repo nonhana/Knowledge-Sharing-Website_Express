@@ -22,7 +22,7 @@ const uploadRouter = require('./router/upload')
 
 app.use(cors())
 
-// 除了/api/开头的接口不需要鉴权，其他的接口都需要鉴权
+// .unless中用正则表达式来设置无需token的url
 app.use(expressJWT({ secret: config.secretKey }).unless({ path: [/^\/user\//, /^\/api\//, /^\/images\//] }))
 
 // 配置解析表单数据的中间件

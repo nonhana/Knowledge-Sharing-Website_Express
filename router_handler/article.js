@@ -65,7 +65,7 @@ exports.getArticleMain = (req, res) => {
       article_main.article_major = article_main.article_major.split(",")
       article_main.article_labels = article_main.article_labels.split(",")
       return res.send({
-        result_code: 1,
+        result_code: 0,
         result_msg: "get article main succeed",
         // article_main: Reflect.defineProperty(JSON.parse(results[0]), 'article_introduce')
         article_main: article_main
@@ -74,7 +74,7 @@ exports.getArticleMain = (req, res) => {
   })
 }
 
-// 提交文章的处理函数
+// 上传文章的处理函数
 exports.postArticle = (req, res) => {
   const article_body = req.body
   // 将major转换成以','分隔的字符串存储
