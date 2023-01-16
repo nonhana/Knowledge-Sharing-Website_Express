@@ -192,3 +192,111 @@ exports.submitSearchKeyword = (req, res) => {
     }
   })
 }
+
+// 当用户在文章详情页进行书签的添加时，将该书签信息存入数据库
+exports.addBookMark = (req, res) => {
+  const new_bookmark = req.body
+  const user_id = new_bookmark.user_id
+  // 首先判断该用户有没有添加过相同文章的标签数据，如果有更新topHeight即可，否则新增标签
+  const sql_SelectUserBookMark = 'select * from article_bookmarks where user_id=?'
+  db.query(sql_SelectUserBookMark, user_id, (err, results) => {
+    if (err) {
+      return res.send({
+        result_code: 1,
+        result_msg: "get user's bookmark failed：" + err.message
+      })
+    } else {
+      const bookmarks = results
+      let flag = 0
+      bookmarks.forEach((item) => {
+        if (item.article_id == new_bookmark.article_id && item.user_id == new_bookmark.user_id) {
+          flag = 1
+          const sql_UpdateBookMark = 'update article_bookmarks set topHeight=? where article_id=? and user_id=?'
+          db.query(sql_UpdateBookMark, [new_bookmark.topHeight, new_bookmark.article_id, new_bookmark.user_id], (err, results) => {
+            if (err) {
+              return res.send({
+                result_code: 1,
+                result_msg: "update bookmark failed：" + err.message
+              })
+            } else if (results.affectedRows !== 1) {
+              return res.send({
+                result_code: 1,
+                result_msg: "results.affectedRows = " + results.affectedRows
+              })
+            } else {
+              return res.send({
+                result_code: 0,
+                result_msg: "update bookmark succeed"
+              })
+            }
+          })
+        }
+      })
+      if (flag == 0) {
+        const sql_AddBookMark = 'insert into article_bookmarks set ?'
+        db.query(sql_AddBookMark, new_bookmark, (err, results) => {
+          if (err) {
+            return res.send({
+              result_code: 1,
+              result_msg: "add bookmark failed：" + err.message
+            })
+          } else if (results.affectedRows !== 1) {
+            return res.send({
+              result_code: 1,
+              result_msg: "results.affectedRows = " + results.affectedRows
+            })
+          } else {
+            return res.send({
+              result_code: 0,
+              result_msg: "add bookmark succeed"
+            })
+          }
+        })
+      }
+    }
+  })
+}
+
+//获取指定用户的文章标签
+exports.getBookMark = (req, res) => {
+  const user_id = req.query.user_id
+  const sql_SelectUserBookMark = 'select * from article_bookmarks where user_id=?'
+  db.query(sql_SelectUserBookMark, user_id, (err, results) => {
+    if (err) {
+      return res.send({
+        result_code: 1,
+        result_msg: "get bookmark failed：" + err.message
+      })
+    } else {
+      return res.send({
+        result_code: 0,
+        result_msg: "get bookmark succeed",
+        bookmarks: results
+      })
+    }
+  })
+}
+
+// 移除用户添加的标签
+exports.removeBookMark = (req, res) => {
+  const bookmark_info = req.body
+  const sql_RemoveBookMark = 'delete from article_bookmarks where article_id=? and user_id=?'
+  db.query(sql_RemoveBookMark, [bookmark_info.article_id, bookmark_info.user_id], (err, results) => {
+    if (err) {
+      return res.send({
+        result_code: 1,
+        result_msg: "remove bookmark failed：" + err.message
+      })
+    } else if (results.affectedRows !== 1) {
+      return res.send({
+        result_code: 1,
+        result_msg: "results.affectedRows = " + results.affectedRows
+      })
+    } else {
+      return res.send({
+        result_code: 0,
+        result_msg: "remove bookmark succeed"
+      })
+    }
+  })
+}

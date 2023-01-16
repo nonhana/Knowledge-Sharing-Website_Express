@@ -8,6 +8,7 @@ const article_labels = joi.array().min(1).max(45).required()
 const article_introduce = joi.string().min(1).max(100).required()
 const author_id = joi.number().min(1).required()
 const article_uploaddate = joi.string().min(1).max(45).required()
+const article_updatedate = joi.string().min(1).max(45).required()
 const article_link = joi.string().allow('')
 const article_md = joi.string().required()
 
@@ -23,6 +24,7 @@ exports.reg_article_schema = {
     article_introduce,
     author_id,
     article_uploaddate,
+    article_updatedate,
     article_link,
     article_md
   }

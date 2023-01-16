@@ -10,6 +10,9 @@ router.get('/articlemain', articleHandler.getArticleMain)
 router.post('/postarticle', expressJoi(reg_article_schema), articleHandler.postArticle)
 router.post('/addlabels', articleHandler.addArticleLabel)
 router.post('/submitkeyword', articleHandler.submitSearchKeyword)
+router.post('/postbookmark', articleHandler.addBookMark)
+router.get('/getbookmark', articleHandler.getBookMark)
+router.post('/removebookmark', articleHandler.removeBookMark)
 
-// 将路由对象共享出去
+// 将路由对象共享出去 
 module.exports = router
