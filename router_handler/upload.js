@@ -20,7 +20,7 @@ exports.uploadImg = (req, res) => {
       res.send({
         result_code: 0,
         result_msg: "save picture succeed",
-        imgURL: `http://127.0.0.1:4000/images/${imageId}.jpg`,
+        imgURL: `http://116.62.174.166:4000/images/${imageId}.jpg`,
         base64Data: imageId
       });
     }
