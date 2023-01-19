@@ -13,6 +13,8 @@ router.post('/submitkeyword', articleHandler.submitSearchKeyword)
 router.post('/postbookmark', articleHandler.addBookMark)
 router.get('/getbookmark', articleHandler.getBookMark)
 router.post('/removebookmark', articleHandler.removeBookMark)
+router.post('/editarticle', articleHandler.editArticle)
+router.post('/deletearticle', articleHandler.deleteArticle)
 
 // 将路由对象共享出去 
 module.exports = router

@@ -61,13 +61,12 @@ exports.getArticleMain = (req, res) => {
       })
     } else {
       // 解构赋值，将要剔除的属性写在前面
-      let { article_introduce, ...article_main } = results[0]
+      let article_main = results[0]
       article_main.article_major = article_main.article_major.split(",")
       article_main.article_labels = article_main.article_labels.split(",")
       return res.send({
         result_code: 0,
         result_msg: "get article main succeed",
-        // article_main: Reflect.defineProperty(JSON.parse(results[0]), 'article_introduce')
         article_main: article_main
       })
     }
@@ -97,6 +96,58 @@ exports.postArticle = (req, res) => {
       return res.send({
         result_code: 0,
         result_msg: "post article succeed"
+      })
+    }
+  })
+}
+
+// 编辑文章的处理函数
+exports.editArticle = (req, res) => {
+  const { article_id, ...update_article } = req.body
+  // 将major转换成以','分隔的字符串存储
+  update_article.article_major = update_article.article_major.join(",")
+  // 将labels转换成以','分隔的字符串存储
+  update_article.article_labels = update_article.article_labels.join(",")
+  const sql_EditArticle = 'update articles set ? where article_id=?'
+  db.query(sql_EditArticle, [update_article, article_id], (err, results) => {
+    if (err) {
+      return res.send({
+        result_code: 1,
+        result_msg: "edit article failed：" + err.message
+      })
+    } else if (results.affectedRows !== 1) {
+      return res.send({
+        result_code: 1,
+        result_msg: "results.affectedRows = " + results.affectedRows
+      })
+    } else {
+      return res.send({
+        result_code: 0,
+        result_msg: "edit article succeed"
+      })
+    }
+  })
+}
+
+// 删除文章的处理函数
+exports.deleteArticle = (req, res) => {
+  const target_id = req.body.article_id
+  const sql_DeleteArticle = 'delete from articles where article_id=?'
+  db.query(sql_DeleteArticle, target_id, (err, results) => {
+    if (err) {
+      return res.send({
+        result_code: 1,
+        result_msg: "delete article failed：" + err.message
+      })
+    } else if (results.affectedRows !== 1) {
+      return res.send({
+        result_code: 1,
+        result_msg: "results.affectedRows = " + results.affectedRows
+      })
+    } else {
+      return res.send({
+        result_code: 0,
+        result_msg: "delete article succeed"
       })
     }
   })
